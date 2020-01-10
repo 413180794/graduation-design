@@ -1,9 +1,6 @@
 'use strict'
-import electron from 'electron'
-const app = electron.app
-const BrowserWindow = electron.BrowserWindow
-const Menu = electron.Menu
-const dialog = electron.dialog
+import {app, BrowserWindow, Menu, ipcMain, dialog} from 'electron'
+import {getFilesByDirectory, getFilesBySelect} from './tools'
 
 /**
  * Set `__static` path to static files in production
@@ -22,44 +19,35 @@ function createWindow () {
   /**
    * Initial window options
    */
+  Menu.setApplicationMenu(null)
   mainWindow = new BrowserWindow({
     height: 563,
     useContentSize: true,
     width: 1000,
-    // frame: false,
+    frame: false,
+    show: false,
     webPreferences: {
-      nodeIntegration: true
+      nodeIntegration: true,
+      webSecurity: false
     }
   })
 
   mainWindow.loadURL(winURL)
-
   mainWindow.on('closed', () => {
     mainWindow = null
   })
+  mainWindow.on('resize', (event) => {
+    let sizeData = mainWindow.getContentBounds()
+    event.sender.send('resizeEvent', sizeData)
+  })
 }
 
-const template = [{
-  label: 'File',
-  submenu: [
-    {
-      label: 'Say Hello',
-      click: () => dialog.showErrorBox('hello', 'content')
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: 'Quit',
-      accelerator: 'Command+Q',
-      click: app.quit
-    }
-  ]
-}]
-const menu = Menu.buildFromTemplate(template)
-Menu.setApplicationMenu(menu)
-
-app.on('ready', createWindow)
+app.on('ready', () => {
+  createWindow()
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show()
+  })
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -71,6 +59,19 @@ app.on('activate', () => {
   if (mainWindow === null) {
     createWindow()
   }
+})
+
+ipcMain.on('getFilesBySelect', (event, arg) => {
+  event.sender.send('getFilesBySelect-reply', getFilesBySelect(mainWindow))
+})
+
+ipcMain.on('getFilesByDirectory', (event, arg) => {
+  // 读取文件夹下所有的图片
+  getFilesByDirectory(mainWindow).then(function (files) {
+    event.sender.send('getFilesByDirectory-reply', files)
+  }).catch((error) => {
+    dialog.showErrorBox('错误', error)
+  })
 })
 
 /**
