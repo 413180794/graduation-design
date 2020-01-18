@@ -57,6 +57,7 @@
   },
   "dependencies": {
     "axios": "^0.18.0",
+    "circular-json": "^0.5.9",
     "dompurify": "^2.0.7",
     "element-ui": "^2.13.0",
     "epic-spinners": "^1.1.0",
@@ -64,6 +65,7 @@
     "marked": "^0.8.0",
     "material-design-icons-iconfont": "^5.0.1",
     "thrift": "^0.12.0",
+    "viewerjs": "^1.5.0",
     "vue": "^2.5.16",
     "vue-coverflow": "^2.2.0",
     "vue-electron": "^1.0.6",

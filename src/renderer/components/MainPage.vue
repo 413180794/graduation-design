@@ -1,7 +1,7 @@
 <template>
     <div id="main-page">
-        <nav-menu></nav-menu>
-        <pic-flow></pic-flow>
+        <nav-menu class="nav-menu"></nav-menu>
+        <pic-flow class="pic-flow"></pic-flow>
     </div>
 </template>
 

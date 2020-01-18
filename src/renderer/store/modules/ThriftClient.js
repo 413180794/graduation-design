@@ -1,11 +1,11 @@
-import thrift from 'thrift'
+// import thrift from 'thrift'
 // import {nativeImage} from 'electron'
 import path from 'path'
 // import fs from 'fs'
 
 const namespaced = true
 const clientTypes = require('../../../../static/thrift_js/client_types')
-const predictService = require('../../../../static/thrift_js/predictService')
+// const predictService = require('../../../../static/thrift_js/predictService')
 
 console.log(clientTypes)
 // 配置thrift的connection信息
@@ -13,13 +13,11 @@ console.log(clientTypes)
 // task*列表中存放当前程序中识别后的图像
 const state = {
   images: [],
-  coverList: [],
   task1_result: [],
   task2_result: [],
   task3_result: [],
   task4_result: [],
-  connection: null,
-  client: null
+  connected: false
 }
 const getters = {
   items: function (state) {
@@ -30,43 +28,48 @@ const getters = {
         originSrc: 'file://' + image,
         middleSrc: 'file://' + image,
         thumbnail: 'file://' + image,
+        filePath: image,
         caption: path.basename(image)
       }
     })
+  },
+  taskOneResult (state) {
+    return state.task1_result
+  },
+  taskTwoResult (state) {
+    return state.task2_result
+  },
+  taskThreeResult (state) {
+    return state.task3_result
+  },
+  taskFourResult (state) {
+    return state.task4_result
+  },
+  images (state) {
+    return state.images
+  },
+  connected (state) {
+    return state.connected
   }
-  // coverList: function (state) {
-  //   return [
-  //     {
-  //       cover: 'file:///home/zhangfan/workData/LinuxCode/WebProject/graduation-design/static/img_1.jpg',
-  //       title: 'fdf'
-  //     },
-  //     {
-  //       cover: 'file:///home/zhangfan/workData/LinuxCode/WebProject/graduation-design/static/img_2.jpg',
-  //       title: 'fasd'
-  //     }
-  //   ]
-  // }
 }
+
 // mutation只能实现同步变更state对象。如果需要实现异步变更，
 // 那么 应该使用action
 const mutations = {
-  SETUP_CONNECTION () {
-    // 建立连接，不允许重复建立连接
-    if (state.connection !== null && state.client !== null) {
-      console.log('连接已经建立')
-      return
-    }
-    state.connection = thrift.createConnection('127.0.0.1', 8080)
-    // 根据配置的connection创建client
-    state.client = thrift.createClient(predictService, state.connection)
+  SET_CONNECTION_STATE (state, connected) {
+    // 设置connect的状态，false表示已经连接，true表示未连接
+    state.connected = connected
   },
   SET_IMAGES (state, images) {
-    //  重新设置数组
+    //  重新设置图片数组
     state.images = images
   },
   CLEAR_IMAGES (state) {
     // 清空数组
     state.images.splice(0, state.images.length)
+  },
+  ADD_TASK1_RESULT (state, result) {
+    state.task1_result.push(result)
   },
   SET_TASK1_RESULT (state, task1Result) {
     // 设置任务一识别结果
@@ -97,12 +100,8 @@ const mutations = {
 }
 // 直接返回 promise而不是使用回调函数
 const actions = {
-  setup_connection ({commit}) {
-    // 异步建立连接
-    return new Promise((resolve) => {
-      commit('SETUP_CONNECTION')
-      resolve('连接已建立')
-    })
+  set_connection_state ({commit}, connected) {
+    commit('SET_CONNECTION_STATE', connected)
   },
   set_images ({commit}, images) {
     return new Promise((resolve) => {
@@ -115,6 +114,12 @@ const actions = {
       commit('CLEAR_IMAGES')
       resolve('图片数组清除成功')
     })
+  },
+  set_task1_result ({commit}, taskOneResult) {
+    commit('SET_TASK1_RESULT', taskOneResult)
+  },
+  add_task1_result ({commit}, taskOneResult) {
+    commit('ADD_TASK1_RESULT', taskOneResult)
   },
   clear_task1_result ({commit}) {
     return new Promise((resolve) => {

@@ -1,7 +1,6 @@
 'use strict'
 import {app, BrowserWindow, Menu, ipcMain, dialog} from 'electron'
 import {getFilesByDirectory, getFilesBySelect} from './tools'
-
 /**
  * Set `__static` path to static files in production
  * https://simulatedgreg.gitbooks.io/electron-vue/content/en/using-static-assets.html
@@ -73,7 +72,6 @@ ipcMain.on('getFilesByDirectory', (event, arg) => {
     dialog.showErrorBox('错误', error)
   })
 })
-
 /**
  * Auto Updater
  *

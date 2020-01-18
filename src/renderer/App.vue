@@ -7,7 +7,7 @@
 <script>
   import MainPage from './components/MainPage'
 
-  const bodyStyle = 'height: 100%;margin:0;overflow:hidden'
+  const bodyStyle = 'height: 100%;margin:0;overflow:hidden;user-select:none'
   const htmlStyle = 'height: 100%; margin:0;width:100%'
 
   export default {

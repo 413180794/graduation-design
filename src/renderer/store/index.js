@@ -13,5 +13,6 @@ export default new Vuex.Store({
     createPersistedState()
     // createSharedMutations()
   ],
+  supportCircular: true,
   strict: process.env.NODE_ENV !== 'production'
 })

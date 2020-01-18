@@ -16,7 +16,7 @@ export const getFilesBySelect = (browserWindow) => {
     ]
   })
   if (!files) {
-    return
+    return []
   }
   return files
 }
@@ -27,7 +27,7 @@ export const getFilesByDirectory = (browserWindow) => {
     properties: ['openDirectory']
   })
   if (!directories) {
-    return
+    return []
   }
   const directory = directories[0] // 只选择了一个
   return new Promise((resolve, reject) => {
