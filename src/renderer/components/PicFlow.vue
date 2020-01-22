@@ -11,105 +11,41 @@
                         <div class="spinner">
                             <half-circle-spinner
                                     :animation-duration="1000"
-                                    :color="accentColor"
+                                    color="#3498db"
                                     :size="60"
-                                    v-if="isLoading"
+                                    v-if="originIsLoading"
                             />
                         </div>
-                        <img
-                                :alt="currentAlt"
-                                :class="{ loading: isLoading}"
-                                :src="currentImage"
-                                ondragstart="return false"
-                                @mousewheel="handleOriginImageMouseWheel"
-                                @load="handleImageLoaded"
-                                @mouseup="handleOriginImageMouseUp"
-                                @mousedown="handleOriginImageMouseDown"
-                                @mouseout="handleOriginImageMouseOut"
-                                @mousemove="handleOriginImageMouseMove"
-                                ref="mainImage"/>
+                        <vue-slideshow :data="items" :config="originConfig" :currentIndex="currentIndex" v-on:indexChange="handleIndexChange"></vue-slideshow>
                         <!--图片的文字说明-->
                         <!--添加向左向右的箭头-->
                     </div>
-                    <a
-                            @click="showPreviousImage"
-                            class="control left"
-                    >
-                            <span>
-                                &#9664;
-                            </span>
-                    </a>
-                    <a
-                            @click="showNextImage"
-                            class="control right"
-                    >
-                            <span>
-                                &#9654;
-                            </span>
-                    </a>
                 </div>
                 <div class="taskOneImage">
                     <div class="box">
                         <div class="spinner">
                             <half-circle-spinner
                                     :animation-duration="1000"
-                                    :color="accentColor"
+                                    color="#3498db"
                                     :size="60"
                                     v-if="taskOneIsLoading"
                             />
                         </div>
-                        <img :src="currentTaskOneImage"
-                             alt=""
-                             ondragstart="return false"
-                             @load="handleTaskOneImageLoaded"
-                             @mousewheel="handleTaskOneImageMouseWheel"
-                             @mouseup="handleTaskOneImageMouseUp"
-                             @mousedown="handleTaskOneImageMouseDown"
-                             @mouseout="handleTaskOneImageMouseOut"
-                             @mousemove="handleTaskOneImageMouseMove"
-                             :class="{ loading: taskOneIsLoading}"
-                             ref="taskOneImage"
-                        >
+                        <vue-slideshow :data="taskOneResult" :config="taskOneConfig"></vue-slideshow>
                     </div>
                 </div>
                 <div class="taskTwoImage">
                     <div class="box">
-                    <div class="spinner">
-                        <half-circle-spinner
-                                :animation-duration="1000"
-                                :color="accentColor"
-                                :size="60"
-                                v-if="taskTwoIsLoading"
-                        />
+                        <div class="spinner">
+                            <half-circle-spinner
+                                    :animation-duration="1000"
+                                    color="#3498db"
+                                    :size="60"
+                                    v-if="taskTwoIsLoading"
+                            />
+                        </div>
+                        <vue-slideshow :data="taskTwoResult" :config="taskTwoConfig"></vue-slideshow>
                     </div>
-                    <img src=""
-                         alt=""
-                         ondragstart="return false"
-                         @load="handleTaskOneImageLoaded"
-                         @mousewheel="handleTaskTwoImageMouseWheel"
-                         @mouseup="handleTaskTwoImageMouseUp"
-                         @mousedown="handleTaskTwoImageMouseDown"
-                         @mouseout="handleTaskTwoImageMouseOut"
-                         @mousemove="handleTaskTwoImageMouseMove"
-                         ref="taskTwoImage"
-                    >
-                    </div>
-                    <a
-                            @click="showPreviousImage"
-                            class="control left"
-                    >
-                            <span>
-                                &#9664;
-                            </span>
-                    </a>
-                    <a
-                            @click="showNextImage"
-                            class="control right"
-                    >
-                            <span>
-                                &#9654;
-                            </span>
-                    </a>
                 </div>
             </div>
             <div class="galleryThumbnails">
@@ -117,7 +53,7 @@
                     <div :key="index" class="galleryThumbnailsContentElem" v-for="(item, index) in items">
                         <img
                                 :alt="Object.prototype.hasOwnProperty.call(item, 'alt') ? item.alt : ''"
-                                :src="item.thumbnail"
+                                :src="item.src"
                                 :style="thumbnailStyle(index)"
                         />
                         <div class="info" v-on=" { click: () => handleImageClick(index)}">
@@ -134,55 +70,14 @@
 <script>
   import {HalfCircleSpinner} from 'epic-spinners'
   import LargeView from './LargeView'
-  import {ipcRenderer, remote} from 'electron'
+  import {ipcRenderer} from 'electron'
   import path from 'path'
   import Viewer from 'viewerjs'
   import 'viewerjs/dist/viewer.css'
+  import VueSlideShow from './SlideShow'
 
   export default {
     name: 'PicFlow',
-    props: {
-      width: {
-        type: Number,
-        default: 980
-      },
-      bgColor: {
-        type: String,
-        default: 'transparent'
-      },
-      startImageIndex: {
-        type: Number,
-        default: 0
-      },
-      coverWidth: {
-        type: Number,
-        default: 100
-      },
-      coverHeight: {
-        type: Number,
-        default: 100
-      },
-      coverSpace: {
-        type: Number,
-        default: 110
-      },
-      coverShadow: {
-        type: Boolean,
-        default: true
-      },
-      coverFlat: {
-        type: Boolean,
-        default: true
-      },
-      accentColor: {
-        type: String,
-        default: '#3498db'
-      },
-      baseColor: {
-        type: String,
-        default: '#fff'
-      }
-    },
     computed: {
       items () {
         return this.$store.getters['ThriftClient/items']
@@ -223,248 +118,18 @@
       },
       currentTaskTwoImage () {
         // TODO
-      },
-      client () {
-        return remote.getGlobal('shareClient').client
       }
     },
     methods: {
-      handleOriginImageMouseWheel (event) {
-        /**
-         * 原图显示的滚轮放大缩小
-         */
-        let img = event.target
-        this.originImageParams.zoomVal += event.wheelDelta / 1200
-        if (this.originImageParams.zoomVal >= 0.2) {
-          img.style.setProperty('transform', `translate(-50%,-50%) scale(${this.originImageParams.zoomVal})`)
-        } else {
-          this.originImageParams.zoomVal = 0.2
-          img.style.setProperty('transform', `translate(-50%,-50%) scale(${this.originImageParams.zoomVal})`)
-          return false
-        }
-      },
-      handleTaskOneImageMouseWheel (event) {
-        /**
-         * 任务一图片滚轮放大缩小
-         */
-        let img = event.target
-        this.taskOneImageParams.zoomVal += event.wheelDelta / 1200
-        if (this.taskOneImageParams.zoomVal >= 0.2) {
-          img.style.setProperty('transform', `scale(${this.taskOneImageParams.zoomVal})`)
-        } else {
-          this.taskOneImageParams.zoomVal = 0.2
-          img.style.setProperty('transform', `scale(${this.taskOneImageParams.zoomVal})`)
-          return false
-        }
-      },
-      handleTaskTwoImageMouseWheel (event) {
-        /**
-         * 任务二图像滚轮放大缩小
-         */
-        let img = event.target
-        this.taskTwoImageParams.zoomVal += event.wheelDelta / 1200
-        if (this.taskTwoImageParams.zoomVal >= 0.2) {
-          img.style.setProperty('transform', `scale(${this.taskTwoImageParams.zoomVal})`)
-        } else {
-          this.taskTwoImageParams.zoomVal = 0.2
-          img.style.setProperty('transform', `scale(${this.taskTwoImageParams.zoomVal})`)
-          return false
-        }
-      },
-      handleOriginImageMouseDown (event) {
-        // event.preventDefault()
-        if (event.which === 3) {
-          event.target.style.setProperty('cursor', '-webkit-grabbing')
-          this.originImageParams.flag = true
-          // 鼠标按下时候的位置
-          this.originImageParams.currentOffsetX = event.offsetX
-          this.originImageParams.currentOffsetY = event.offsetY
-        }
-      },
-      handleTaskOneImageMouseDown (event) {
-        if (event.which === 3) {
-          event.target.style.setProperty('cursor', '-webkit-grabbing')
-          this.taskOneImageParams.flag = true
-          // 鼠标按下时候的位置
-          this.taskOneImageParams.currentOffsetX = event.offsetX
-          this.taskOneImageParams.currentOffsetY = event.offsetY
-        }
-      },
-      handleTaskTwoImageMouseDown (event) {
-        // event.preventDefault()
-        if (event.which === 3) {
-          event.target.style.setProperty('cursor', '-webkit-grabbing')
-          this.taskTwoImageParams.flag = true
-          // 鼠标按下时候的位置
-          this.taskTwoImageParams.currentOffsetX = event.offsetX
-          this.taskTwoImageParams.currentOffsetY = event.offsetY
-        }
-      },
-      handleOriginImageMouseUp (event) {
-        event.target.style.setProperty('cursor', '-webkit-grab')
-        this.originImageParams.flag = false
-        // 这里存在一种可能：当按下鼠标却没有移动，会导致无法得到position
-        let position = this.$refs.mainImage.style.getPropertyValue('object-position').split(' ').map((s) => {
-          return parseInt(s.replace('px', ''))
-        })
-        if (isNaN(position[0]) || position[0] === undefined) {
-          this.originImageParams.moveX = 0
-        } else {
-          this.originImageParams.moveX = position[0]
-        }
-        if (isNaN(position[1]) || position[1] === undefined) {
-          this.originImageParams.moveY = 0
-        } else {
-          this.originImageParams.moveY = position[1]
-        }
-      },
-      handleTaskOneImageMouseUp (event) {
-        event.target.style.setProperty('cursor', '-webkit-grab')
-        this.taskOneImageParams.flag = false
-        let position = this.$refs.taskOneImage.style.getPropertyValue('object-position').split(' ').map((s) => {
-          return parseInt(s.replace('px', ''))
-        })
-        if (isNaN(position[0]) || position[0] === undefined) {
-          this.taskOneImageParams.moveX = 0
-        } else {
-          this.taskOneImageParams.moveX = position[0]
-        }
-        if (isNaN(position[1]) || position[1] === undefined) {
-          this.taskOneImageParams.moveY = 0
-        } else {
-          this.taskOneImageParams.moveY = position[1]
-        }
-      },
-      handleTaskTwoImageMouseUp (event) {
-        event.target.style.setProperty('cursor', '-webkit-grab')
-        this.taskTwoImageParams.flag = false
-        let position = this.$refs.taskTwoImage.style.getPropertyValue('object-position').split(' ').map((s) => {
-          return parseInt(s.replace('px', ''))
-        })
-        if (isNaN(position[0]) || position[0] === undefined) {
-          this.taskTwoImageParams.moveX = 0
-        } else {
-          this.taskTwoImageParams.moveX = position[0]
-        }
-        if (isNaN(position[1]) || position[1] === undefined) {
-          this.taskTwoImageParams.moveY = 0
-        } else {
-          this.taskTwoImageParams.moveY = position[1]
-        }
-      },
-      handleOriginImageMouseOut (event) {
-        event.target.style.setProperty('cursor', '-webkit-grab')
-        this.originImageParams.flag = false
-        event.preventDefault()
-        let position = this.$refs.mainImage.style.getPropertyValue('object-position').split(' ').map((s) => {
-          return parseInt(s.replace('px', ''))
-        })
-        if (isNaN(position[0]) || position[0] === undefined) {
-          this.originImageParams.moveX = 0
-        } else {
-          this.originImageParams.moveX = position[0]
-        }
-        if (isNaN(position[1]) || position[1] === undefined) {
-          this.originImageParams.moveY = 0
-        } else {
-          this.originImageParams.moveY = position[1]
-        }
-      },
-      handleTaskOneImageMouseOut (event) {
-        event.target.style.setProperty('cursor', '-webkit-grab')
-        this.taskOneImageParams.flag = false
-        let position = this.$refs.taskOneImage.style.getPropertyValue('object-position').split(' ').map((s) => {
-          return parseInt(s.replace('px', ''))
-        })
-        if (isNaN(position[0]) || position[0] === undefined) {
-          this.taskOneImageParams.moveX = 0
-        } else {
-          this.taskOneImageParams.moveX = position[0]
-        }
-        if (isNaN(position[1]) || position[1] === undefined) {
-          this.taskOneImageParams.moveY = 0
-        } else {
-          this.taskOneImageParams.moveY = position[1]
-        }
-      },
-      handleTaskTwoImageMouseOut (event) {
-        event.target.style.setProperty('cursor', '-webkit-grab')
-        this.taskTwoImageParams.flag = false
-        let position = this.$refs.taskTwoImage.style.getPropertyValue('object-position').split(' ').map((s) => {
-          return parseInt(s.replace('px', ''))
-        })
-        if (isNaN(position[0]) || position[0] === undefined) {
-          this.taskTwoImageParams.moveX = 0
-        } else {
-          this.taskTwoImageParams.moveX = position[0]
-        }
-        if (isNaN(position[1]) || position[1] === undefined) {
-          this.taskTwoImageParams.moveY = 0
-        } else {
-          this.taskTwoImageParams.moveY = position[1]
-        }
-      },
-      handleOriginImageMouseMove (event) {
-        if (this.originImageParams.flag) {
-          let img = event.target
-          let nowOffsetX = event.offsetX // 当前水平位置
-          let nowOffsetY = event.offsetY // 当前垂直位置
-          let moveX = nowOffsetX - this.originImageParams.currentOffsetX + this.originImageParams.moveX
-          let moveY = nowOffsetY - this.originImageParams.currentOffsetY + this.originImageParams.moveY
-          img.style.setProperty('object-position', `${parseInt(moveX)}px ${parseInt(moveY)}px`)
-        }
-        event.preventDefault()
-        return false
-      },
-      handleTaskOneImageMouseMove (event) {
-        if (this.taskOneImageParams.flag) {
-          let img = event.target
-          let nowOffsetX = event.offsetX // 当前水平位置
-          let nowOffsetY = event.offsetY // 当前垂直位置
-          let moveX = nowOffsetX - this.taskOneImageParams.currentOffsetX + this.taskOneImageParams.moveX
-          let moveY = nowOffsetY - this.taskOneImageParams.currentOffsetY + this.taskOneImageParams.moveY
-          img.style.setProperty('object-position', `${parseInt(moveX)}px ${parseInt(moveY)}px`)
-        }
-        event.preventDefault()
-        return false
-      },
-      handleTaskTwoImageMouseMove (event) {
-        if (this.taskTwoImageParams.flag) {
-          let img = event.target
-          let nowOffsetX = event.offsetX // 当前水平位置
-          let nowOffsetY = event.offsetY // 当前垂直位置
-          let moveX = nowOffsetX - this.taskTwoImageParams.currentOffsetX + this.taskTwoImageParams.moveX
-          let moveY = nowOffsetY - this.taskTwoImageParams.currentOffsetY + this.taskTwoImageParams.moveY
-          img.style.setProperty('object-position', `${parseInt(moveX)}px ${parseInt(moveY)}px`)
-        }
-        event.preventDefault()
-        return false
-      },
-      handleChange (index) {
+      handleIndexChange (index) {
+        // 使得子组件响应父组件，得到双向绑定的效果
         this.currentIndex = index
-        this.$emit('change', index)
       },
       initGallery () {
         // 初始化动作
         // 这里要考虑到items为空的可能
-        if (this.items.length !== 0) {
-          this.currentImage = this.items[this.startImageIndex].middleSrc
-          this.currentCaption = this.items[this.startImageIndex].caption
-          this.currentId = this.items[this.startImageIndex].id
-          this.currentImagePath = this.items[this.startImageIndex].filePath
-        }
-        this.currentIndex = this.startImageIndex
         this.windowWidth = window.innerWidth
         this.windowHeight = window.innerHeight
-      },
-      handleImageLoaded () {
-        // 响应@load，即响应onload=Xxx
-        this.isLoading = false
-        // 修改isLoading为false，更改当前图片的大小
-        // this.updateCurrentImageSizes()
-      },
-      handleTaskOneImageLoaded () {
-        this.taskOneIsLoading = false
       },
       pickImage (index) {
         console.log(index)
@@ -483,35 +148,8 @@
           ? this.items[index].id
           : null
       },
-      showNextImage () {
-        // 显示下一张图 此处有bug，当只有一张图的时候，会重复显示index=0，而此时不会触发图片的 load
-        this.isLoading = true
-        if (this.items.length > this.currentIndex + 1) {
-          this.currentIndex = this.currentIndex + 1
-        } else if (this.items.length === 1) {
-          // 如果只有一个图，直接将this.isLoading赋值为false，否则无法触发img的load导致bug
-          this.isLoading = false
-          return
-        } else {
-          this.currentIndex = 0
-        }
-        this.pickImage(this.currentIndex)
-      },
-      showPreviousImage () {
-        // 显示上一张图片
-        this.isLoading = true
-        if (this.currentIndex !== 0) {
-          this.currentIndex = this.currentIndex - 1
-        } else if (this.items.length === 1) {
-          this.isLoading = false
-          return
-        } else {
-          this.currentIndex = this.items.length - 1
-        }
-        this.pickImage(this.currentIndex)
-      },
       thumbnailStyle (index) {
-        let color = this.currentIndex === index ? this.accentColor : this.baseColor
+        let color = this.currentIndex === index ? '#3498db' : '#fff'
         return 'border-color:' + color
       },
       handleImageClick (index) {
@@ -559,49 +197,31 @@
     },
     data () {
       return {
-        currentImage: null, // 当前的图片file地址
-        currentImagePath: null, // 当年图片的path地址
-        currentImageWidth: 0,
-        currentImageHeight: 0,
-        currentId: null,
-        currentCaption: '',
-        currentAlt: '',
         currentIndex: 0,
         windowWidth: 0,
         windowHeight: 0,
-        isLoading: true,
+        originIsLoading: false,
         taskOneIsLoading: false,
-        taskTwoIsLoading: true,
-        showLargeView: false,
-        originImageParams: {
-          zoomVal: 1,
-          moveX: 0, // 已经在x移动的距离
-          moveY: 0, // 已经在y移动的距离
-          currentOffsetX: 0, // 当前的偏移x
-          currentOffsetY: 0, // 当前的偏移Y
-          flag: false
+        taskTwoIsLoading: false,
+        taskThreeIsLoading: false,
+        originConfig: {
+          effect: 'fade'
         },
-        taskOneImageParams: {
-          zoomVal: 1,
-          moveX: 0,
-          moveY: 0,
-          currentOffsetX: 0,
-          currentOffsetY: 0,
-          flag: false
+        taskOneConfig: {
+          effect: 'fade'
         },
-        taskTwoImageParams: {
-          zoomVal: 1,
-          moveX: 0,
-          moveY: 0,
-          currentX: 0,
-          currentY: 0,
-          flag: false
+        taskTwoConfig: {
+          effect: 'fade'
+        },
+        taskThreeConfig: {
+          effect: 'fade'
         }
       }
     },
     components: {
       HalfCircleSpinner,
-      LargeView
+      LargeView,
+      VueSlideshow: VueSlideShow
     }
     // directives: {
     //   picFlow
@@ -674,21 +294,19 @@
                 }
 
                 a.control {
-                    position: absolute;
-                    padding-left: 5px;
-                    padding-right: 5px;
-                    top: 0;
-                    height: 100%;
                     display: none;
-                    font-size: 20px;
-                    color: #fff;
+                    width: 40px;
+                    height: 40px;
+                    background-image: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/PjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+PHN2ZyB0PSIxNTU1NzI0MjA4NjA5IiBjbGFzcz0iaWNvbiIgc3R5bGU9IiIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHAtaWQ9IjIyOTAiIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMjgiIGhlaWdodD0iMjgiPjxkZWZzPjxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+PC9zdHlsZT48L2RlZnM+PHBhdGggZD0iTTY3MC42NzY5MjkgNzc3LjU5Mjk4NCA0MDMuNjI3NzggNTEzLjM2MjAyMWwyNjUuMzIwNzg1LTI2OC4xNDYxMzNjMTEuNzc2MjA4LTExLjc3NTE4NCAxMS43MzQyNTItMzAuOTA4OTY0LTAuMDkxMDc0LTQyLjczNDI5bC0wLjAwMTAyMyAwYy0xMS44MjUzMjYtMTEuODI2MzUtMzAuOTU4MDgyLTExLjg2NzI4Mi00Mi43MjgxNSAyLjkzMDc0OUwzNDMuMTAwMjQyIDQ4OC40NDA0MjFjLTMuODE3OTU1IDQuMjczMzI3LTguMjA1ODkyIDkuMzIxMjk2LTguOTMzNDYzIDEyLjA0NTMzNy00LjQ3MDgyNSAxMS4xMTIwODItMi4yMzI4NTQgMjQuNzY1MDMzIDYuNzEwODQyIDM1Ljk4NzYzMmwyODYuOTgyMTMgMjg2Ljk4MjEzYzExLjg3NTQ2OCA4Ljg0NzUwNSAzMS4wOTYyMjkgOC44OTM1NTQgNDIuOTIyNTc4LTIuOTMyNzk2QzY4Mi42MDY2MzMgODA4LjY5NjM3NiA2ODIuNTYwNTg0IDc4OS40NzY2MzkgNjcwLjY3NjkyOSA3NzcuNTkyOTg0eiIgcC1pZD0iMjI5MSIgZmlsbD0iI2ZmZmZmZiI+PC9wYXRoPjwvc3ZnPg==");
+                    background-color: rgba(0, 0, 0, .5);
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    position: absolute;
+                    top: 50%;
+                    border-radius: 50%;
                     cursor: pointer;
-                    text-shadow: 0 0 20px rgba(0, 0, 0, 0.75);
-                    transition: opacity 0.3s ease;
-                    /*&:before {*/
-                    /*    position: relative;*/
-                    /*    top: calc(10%);*/
-                    /*}*/
+                    transform: translateY(-50%);
+
                     &:hover {
                         display: flex;
                         justify-content: center;
@@ -696,20 +314,18 @@
                     }
 
                     &.left {
-                        left: 0;
+                        left: 15px;
                     }
 
                     &.right {
-                        right: 0
-
+                        right: 15px;
+                        transform: translateY(-50%) rotate(180deg)
                     }
                 }
 
                 &:hover {
                     a.control {
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
+                        display: block;
                     }
                 }
 
@@ -817,6 +433,7 @@
                     -ms-transform: rotate(3deg);
                     transform: rotate(3deg);
                 }
+
                 .box {
                     position: relative;
                     width: 100%;
@@ -909,18 +526,45 @@
                     transform: rotate(3deg);
                 }
 
-                img {
+                .box {
+                    position: relative;
                     width: 100%;
                     height: 100%;
-                    border: 1px solid #fff;
-                    cursor: pointer;
-                    transition: opacity 0.25s ease;
-                    display: block;
-                    object-fit: cover;
+                    overflow: hidden;
 
-                    &.loading {
-                        opacity: 0.25;
+                    .spinner {
+                        position: relative;
+                        transform: translate(-50%, -50%);
+                        left: 50%;
+                        top: 50%;
+                        width: 100%;
+                        opacity: 10%;
+
+                        .half-circle-spinner {
+                            position: relative;
+                            transform: translate(-50%, -50%);
+                            left: 50%;
+                            top: 50%;
+                            width: 100%;
+                            height: 100%;
+                        }
+                    }
+
+                    vue-slideshow {
+                        position: relative;
+                        width: 100%;
+                        height: 100%;
+                        border: 1px solid #fff;
+                        cursor: -webkit-grab;
                         transition: opacity 0.25s ease;
+                        display: block;
+                        object-fit: cover;
+
+                        &.loading {
+                            opacity: 0.25;
+                            transition: opacity 0.25s ease;
+                        }
+
                     }
                 }
             }

@@ -25,9 +25,7 @@ const getters = {
     // 原图-缩略图（长宽乘以30%）-中型图（长宽乘以60%）
     return state.images.map(function (image) {
       return {
-        originSrc: 'file://' + image,
-        middleSrc: 'file://' + image,
-        thumbnail: 'file://' + image,
+        src: 'file://' + image,
         filePath: image,
         caption: path.basename(image)
       }
