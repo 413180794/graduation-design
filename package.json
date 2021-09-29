@@ -139,6 +139,6 @@
   },
   "optionalDependencies": {
     "fsevents": "^2.1.2",
-    "i": "^0.3.6"
+    "i": "^0.3.7"
   }
 }
